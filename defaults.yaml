@@ -1,0 +1,42 @@
+# HomeAssistant server.
+homeassistant:
+  schema: http
+  ip: null
+  port: 8123
+  config: null
+
+node:
+  ip: null # [REQUIRED] Each kiosk should, at a minimum, overwrite this value with its IP
+  username: 'pi' # The user on the Raspberry Pi
+  hostname: null # force-set the hostname of the kiosk; defaults to the name of the kiosk.
+  monitor: false # enable monitor?
+  kiosk: null # a dictionary of kiosk configs to merge atop the defaults
+
+nodes: {}
+
+# Default settings for ALL kiosks. Any single kiosk can overwrite any one of these values.
+kiosk:
+  startup: '' # Flags to send to the startup script.
+  tab: null # The URL slug to use when loading lovelace. Defaults to the name of the kiosk.
+  show_tabs: false # Keep the top tabs in lovelace?
+
+  xscreensaver:
+    mode: 'blank'
+    timeout: '00:01:00'
+
+# Configuration variables for monitor.
+# c.f. https://github.com/andrewjfreyer/monitor#how-monitor-works
+monitor:
+  # mqtt_preferences:
+  mqtt_user: null # [REQUIRED]
+  mqtt_password: null # [REQUIRED]
+  mqtt_topicpath: monitor
+  mqtt_publisher_identity: "''" # empty string intentionally double-quoted. defaults to hostname.
+  devices: [] # a.k.a. "known_static_addresses"
+  beacons: [] # a.k.a. "known_static_beacons"
+  blacklist: [] # a.k.a. "address_blacklist"
+  config_files:
+  - address_blacklist
+  - known_beacon_addresses
+  - known_static_addresses
+  - mqtt_preferences

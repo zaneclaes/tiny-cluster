@@ -1,2 +1,2 @@
-# home-assistant-kiosk
-A Raspberry Pi Kiosk for Home Assisstant
+# Home Cluster
+A one-touch installation and configuration tool for a Raspberry Pi cluster.
