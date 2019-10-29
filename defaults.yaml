@@ -1,45 +1,39 @@
-# Default configuration for all nodes.
-node:
-  ip: null # [REQUIRED] Each kiosk should, at a minimum, overwrite this value with its IP
-  username: 'pi' # The user on the Raspberry Pi
-  hostname: null # force-set the hostname of the kiosk; defaults to the name of the kiosk.
-  startup: '' # Flags to send to the startup script.
-  monitor: null # a dictionary of monitor settings to merge atop the kiosk defaults
-  kiosk: null # a dictionary of kiosk configs to merge atop the defaults
-  usb_ethernet: True # enable/disable USB & Ethernet
-  hdmi: True # enable/disable TVService
-  kubernetes: {} # connect to Kubernetes cluster (if available).
+cluster:
+  master:
+    connect: null # assume the master node is on the same machine.
+    # Alternate example:
+    # connect: 'ssh'
+    # username: 'root'
+    # address: '192.168.1.100'
 
-# Map of name -> config overrides for each node in the cluster.
-nodes: {}
+  nodes: {}
+    # [EXAMPLE]
+    # 192.168.1.202:
+    #   name: cluster-rpi0
 
-# Default settings for ALL kiosks.
-# Any single node can overwrite any one of these values by providing a kiosk dictionary
-kiosk:
-  url_base: null # [REQUIRED] the base URL
-  url_slug: '' # if null, will default to the name of the node.
-  url_query_params: [] # strings to be joined with '&' and appended to query params
-  chromium_flags: '--noerrdialogs --disable-infobars --ignore-certificate-errors'
-  xscreensaver:
-    mode: 'blank'
-    timeout: '00:01:00'
+defaults:
+  context: house
 
-# Configuration variables for monitor.
-# c.f. https://github.com/andrewjfreyer/monitor#how-monitor-works
-monitor:
-  # mqtt_preferences:
-  mqtt_user: null # [REQUIRED]
-  mqtt_password: null # [REQUIRED]
-  mqtt_topicpath: monitor
-  mqtt_publisher_identity: "''" # empty string intentionally double-quoted. defaults to hostname.
-  devices: [] # a.k.a. "known_static_addresses"
-  beacons: [] # a.k.a. "known_static_beacons"
-  blacklist: [] # a.k.a. "address_blacklist"
-  config_files:
-  - address_blacklist
-  - known_beacon_addresses
-  - known_static_addresses
-  - mqtt_preferences
+  # Default configuration for all nodes.
+  node:
+    name: null # alias, will be set as the hostname
+    connect: 'ssh'
+    username: 'pi' # The user on the Raspberry Pi
+    kiosk: null # enable kiosk
+    labels: [] # kubernetes labels
+    usb_ethernet: True # enable/disable USB & Ethernet
+    hdmi: True # enable/disable TVService
+    dns: 8.8.8.8
+    interface: eth0
 
-#
-kubernetes: null
+  # Default settings for ALL kiosks.
+  # Any single node can overwrite any one of these values by providing a kiosk dictionary
+  kiosk:
+    url_base: null # [REQUIRED] the base URL
+    url_slug: '' # if null, will default to the name of the node.
+    url_query_params: [] # strings to be joined with '&' and appended to query params
+    chromium_flags: '--noerrdialogs --disable-infobars --ignore-certificate-errors'
+    unclutter: 0.5
+    xscreensaver:
+      mode: 'blank'
+      timeout: '00:01:00'

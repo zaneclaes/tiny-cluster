@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: obd-monitor
+  namespace: tc
+  labels:
+    app: obd-monitor
+spec:
+  clusterIP: None
+  selector:
+    app: obd-monitor
+  ports:
+  - port: 8000
+    name: obd-prometheus
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: obd-monitor
+  namespace: tc
+  labels:
+    app: obd-monitor
+spec:
+  selector:
+    matchLabels:
+      app: obd-monitor
+  template:
+    metadata:
+      namespace: tc
+      labels:
+        app: obd-monitor
+    spec:
+      hostNetwork: true
+      containers:
+      - name: obd-monitor
+        image: inzania/node-pi-obd-monitor:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: obd-prometheus
+        volumeMounts:
+        - name: obd-serial # Required for OBD access.
+          mountPath: /dev/rfcomm0
+        - name: docker-sock # Required for discovery.
+          mountPath: /var/run/docker.sock
+        securityContext:
+          privileged: true # Required for serial.
+      volumes:
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+      - name: obd-serial
+        hostPath:
+          path: /dev/rfcomm0 # Assumed that the OBD device lives here.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: "tiny-cluster/node-pi-obd-monitor"
+                  operator: In
+                  values: ["true"]

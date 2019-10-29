@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: beacon
+  namespace: tc
+  labels:
+    app: beacon
+spec:
+  selector:
+    matchLabels:
+      app: beacon
+  template:
+    metadata:
+      namespace: tc
+      labels:
+        app: beacon
+    spec:
+      containers:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              # Only schedule on home-cluster nodes labeled as beacons:
+              - matchExpressions:
+                - key: "tiny-cluster/node-pi-beacon"
+                  operator: In
+                  values: ["true"]
+              # [EXAMPLE] only schedule on ARM architecture (no need for labels)
+              # - matchExpressions:
+              #   - key: "beta.kubernetes.io/arch"
+              #     operator: In
+              #     values: ["arm"]
+      hostNetwork: true
+      containers:
+      - name: beacon
+        image: inzania/node-pi-beacon:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 1888
+          name: espruino-hub-ui
+        volumeMounts:
+        - name: docker-sock # Required for discovery.
+          mountPath: /var/run/docker.sock
+        securityContext:
+          privileged: true # Required for BTLE access.
+      volumes:
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock

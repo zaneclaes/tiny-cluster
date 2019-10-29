@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: remote-control
+  namespace: tc
+  labels:
+    app: remote-control
+spec:
+  selector:
+    matchLabels:
+      app: remote-control
+  template:
+    metadata:
+      namespace: tc
+      labels:
+        app: remote-control
+    spec:
+      containers:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              # Only schedule on home-cluster nodes labeled as beacons:
+              - matchExpressions:
+                - key: "tiny-cluster/node-pi-remote-control"
+                  operator: In
+                  values: ["true"]
+              # [EXAMPLE] only sche
+              # - matchExpressions:
+              #   - key: "beta.kubernetes.io/arch"
+              #     operator: In
+              #     values: ["arm"]
+      hostNetwork: true
+      containers:
+      - name: remote-control
+        image: inzania/node-pi-remote-control:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: lirc-web
+        - containerPort: 9001
+          name: lirc
+        volumeMounts:
+        - name: remote-control-data
+          mountPath: /etc/lirc
+        - name: docker-sock # Required for discovery.
+          mountPath: /var/run/docker.sock
+        - name: boot
+          mountPath: /boot/config.txt
+        # - name: modprobe
+        #   mountPath: /etc/modprobe.d
+        - name: lirc0
+          mountPath: /dev/lirc0
+        - name: lirc1
+          mountPath: /dev/lirc1
+        # - name: modules
+        #   mountPath: /etc/modules
+        securityContext:
+          privileged: true # Required for BTLE access.
+      volumes:
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+      - name: boot
+        hostPath:
+          path: /boot/config.txt
+          type: File
+      # - name: modules
+      #   hostPath:
+      #     path: /etc/modules
+      #     type: File
+      # - name: modprobe
+      #   hostPath:
+      #     path: /etc/modprobe.d
+      #     type: Directory
+      - name: lirc0
+        hostPath:
+          path: /dev/lirc0
+      - name: lirc1
+        hostPath:
+          path: /dev/lirc1
+      - name: remote-control-data
+        persistentVolumeClaim:
+          claimName: remote-control-data

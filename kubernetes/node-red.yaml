@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-red
+  namespace: tc
+  labels:
+    app: node-red
+spec:
+  selector:
+    matchLabels:
+      app: node-red
+  template:
+    metadata:
+      namespace: tc
+      labels:
+        app: node-red
+    spec:
+      hostNetwork: true
+      containers:
+      - name: node-red
+        image: inzania/node-pi-red:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 1880
+          name: node-red-ui
+        volumeMounts:
+        - name: node-red-data
+          mountPath: /node-red-data
+          subPath: data
+        - name: node-red-data
+          mountPath: /root/.node-red
+          subPath: settings
+        - name: docker-sock # Required for discovery.
+          mountPath: /var/run/docker.sock
+        securityContext:
+          privileged: true # Required for BTLE access.
+      volumes:
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+      - name: node-red-data
+        persistentVolumeClaim:
+          claimName: node-red-data
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: "tiny-cluster/node-pi-red"
+                  operator: In
+                  values: ["true"]
