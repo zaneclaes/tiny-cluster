@@ -1,15 +1,21 @@
-cluster:
+nodes: {}
+  # [EXAMPLE]
+  # 192.168.1.202:
+  #   name: cluster-rpi0
+
+kubernetes:
+  network-add-on: flannel
+
+  nfs: # Install Network File System
+    directory: 'tiny-cluster'
+    allow_ip: '*'
+
   master:
     connect: null # assume the master node is on the same machine.
-    # Alternate example:
+    # [EXAMPLE] connect to a remote master:
     # connect: 'ssh'
     # username: 'root'
     # address: '192.168.1.100'
-
-  nodes: {}
-    # [EXAMPLE]
-    # 192.168.1.202:
-    #   name: cluster-rpi0
 
 defaults:
   context: house

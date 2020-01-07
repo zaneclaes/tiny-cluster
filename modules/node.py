@@ -80,7 +80,8 @@ class Node(Instance):
         self.exec(f'echo "@bash /home/pi/startup.sh {startup_flags}" > {self._fp_autostart}')
 
         self.kiosk.configure()
-        self.join()
+        if not self._is_master(): self.join()
+        self.label()
 
     # Set hostname & IP
     def _setup_network(self):
@@ -100,15 +101,22 @@ class Node(Instance):
         self.ssh_copy_id()
         self.update()
 
-        self._setup_network()
-        self._setup_kubeadm()
+        if self._is_master():
+            self.log.info('master node; skipping network & kubeadm setup.')
+        else:
+            self._setup_network()
+            self._setup_kubeadm()
         self.kiosk.setup()
 
         self.configure()
         self.update()
         self.reboot()
 
-    # (Re)join the Kubernetes cluster, applying labels in the process.
+    # Is this node also the master?
+    def _is_master(self):
+        return self.user_address == self.cluster.master.user_address
+
+    # (Re)join the Kubernetes cluster
     def join(self):
         if not self.cluster.master:
             self.log.error('Nothing to join: there is no master Kubernetes node.')
@@ -121,6 +129,8 @@ class Node(Instance):
         if len(cmd) <= 0: raise Exception('failed to retrieve kubeadm join command')
         self.exec(f'sudo {cmd}')
 
+    # Add Kubernetes labels to the node.
+    def label(self):
         for label in self.cfg['labels']:
             self.log.info(f'applying label "{label}"...')
             self.cluster.master.exec(f'kubectl label nodes {self.name} {label} --overwrite')

@@ -53,7 +53,7 @@ class TinyCluster():
             parser.add_argument('method', choices=methods, nargs='?', help='what to do with the master')
         elif scope == 'node':
             methods = [c for c in dir(Node) if not c.startswith('_')]
-            node_names = [cfg['cluster']['nodes'][ip]['name'] for ip in cfg['cluster']['nodes']]
+            node_names = [cfg['nodes'][ip]['name'] for ip in cfg['nodes']]
             parser.add_argument('node', choices=node_names, help='node to interact with')
             parser.add_argument('method', choices=methods, help='what to do with the node')
         elif scope == 'setup':
@@ -73,13 +73,17 @@ class TinyCluster():
         # self.stdout = '' # '> /dev/null 2>&1' if self.quiet else ''
 
         # Create master node:
-        if cfg['cluster']['master']:
-            self.master = Master(self, cfg['cluster']['master'])
+        if cfg['kubernetes'] and cfg['kubernetes']['master']:
+            self.nfs = cfg['kubernetes']['nfs']
+            self.network_add_on = cfg['kubernetes']['network-add-on']
+            if self.network_add_on and self.network_add_on != 'flannel':
+                raise Exception('The only networking plugin currently supported is Flannel.')
+            self.master = Master(self, cfg['kubernetes']['master'])
 
         # Create the node instances and run the method.
         self.nodes = {}
-        for node_ip in cfg['cluster']['nodes']:
-            self.create_node(node_ip, cfg['cluster']['nodes'][node_ip])
+        for node_ip in cfg['nodes']:
+            self.create_node(node_ip, cfg['nodes'][node_ip])
 
         # Call the work function.
         logging.debug(f'run {scope} {self.opts}')
@@ -142,17 +146,16 @@ It previously appeared for {self.node_name_to_ip[node_ip]}')''')
         cust = {}
         if os.path.isfile(self.fp_cfg):
             with open(self.fp_cfg, 'r') as stream: cust = yaml.safe_load(stream)
-        if not 'cluster' in cust: cust['cluster'] = {}
-        if not 'nodes' in cust['cluster']: cust['cluster']['nodes'] = {}
-        if not ip_address in cust['cluster']['nodes']: cust['cluster']['nodes'][ip_address] = {}
+        if not 'nodes' in cust: cust['nodes'] = {}
+        if not ip_address in cust['nodes']: cust['nodes'][ip_address] = {}
         keys = list(node_update_cfg)
         for key in keys:
             if key in self.defaults['node'] and self.defaults['node'][key] == node_update_cfg[key]:
                 logging.debug(f'{key} matches node default value of {node_update_cfg[key]}')
                 del node_update_cfg[key]
-        vals = always_merger.merge(cust['cluster']['nodes'][ip_address], node_update_cfg)
+        vals = always_merger.merge(cust['nodes'][ip_address], node_update_cfg)
         if 'address' in vals: del vals['address']
-        cust['cluster']['nodes'][ip_address] = vals
+        cust['nodes'][ip_address] = vals
         with open(self.fp_cfg, 'w') as file:
             yaml.dump(cust, file, default_flow_style=False)
 

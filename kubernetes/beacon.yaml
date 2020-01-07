@@ -34,7 +34,7 @@ spec:
       containers:
       - name: beacon
         image: inzania/node-pi-beacon:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 1888
           name: espruino-hub-ui

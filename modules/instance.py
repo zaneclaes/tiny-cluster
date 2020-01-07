@@ -54,7 +54,7 @@ class Instance():
 
     # Download a file from the instance to the local machine.
     def _download(self, fp_remote, fp_local):
-        self._sh(f'mkdir -p {os.path.dirname(fp_local)}')
+        # self._sh(f'mkdir -p {os.path.dirname(fp_local)}')
         return self._scp(f'{self.user_address}:{fp_remote}', fp_local)
 
     # ensure all software is up-to-date

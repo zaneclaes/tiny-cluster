@@ -19,7 +19,7 @@ spec:
       containers:
       - name: node-red
         image: inzania/node-pi-red:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 1880
           name: node-red-ui

@@ -34,7 +34,12 @@ spec:
       containers:
       - name: obd-monitor
         image: inzania/node-pi-obd-monitor:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: UNITS
+          value: imperial
+        - name: OBD_PORT
+          value: /dev/rfcomm0
         ports:
         - containerPort: 8000
           name: obd-prometheus
