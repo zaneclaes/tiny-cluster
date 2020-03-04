@@ -11,15 +11,13 @@ kubernetes:
     allow_ip: '*'
 
   master:
-    connect: null # assume the master node is on the same machine.
+    connect: null
     # [EXAMPLE] connect to a remote master:
     # connect: 'ssh'
     # username: 'root'
     # address: '192.168.1.100'
 
 defaults:
-  context: house
-
   # Default configuration for all nodes.
   node:
     name: null # alias, will be set as the hostname

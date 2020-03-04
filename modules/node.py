@@ -31,7 +31,7 @@ class Node(Instance):
         if self.cfg[key] == False or self.cfg[key] == None:
             self.log.debug(f'{key} disabled')
             return None
-        cfg = dict(self.cluster.defaults[key])
+        cfg = dict(self.cluster.config['defaults'][key])
         if type(self.cfg[key]) == dict or type(self.cfg[key]) == list:
             cfg = always_merger.merge(cfg, self.cfg[key])
         return cfg
@@ -43,13 +43,6 @@ class Node(Instance):
     # # upload a backed-up file to this node
     # def _restore(self, fp_remote):
     #     self._upload(f'{self.dir_backup}/{fp_remote}', fp_remote)
-
-    # Get the path at which to store a local file.
-    def _upload_rp_file(self, fp_remote):
-        fp_local = fp_remote
-        if fp_local.startswith('.'): fp_local = fp_local[1:]
-        fp_local = f'{self.cluster.cwd}/raspberry-pi/{fp_local}'
-        return self._upload(fp_local, fp_remote)
 
     # Return the MAC addr of the bluetooth, if available
     def _get_bt_mac_addr(self):
@@ -90,16 +83,9 @@ class Node(Instance):
         args = f'"{self.name}" "{self.cfg["address"]}" "{self.cfg["dns"]}" "{self.cfg["interface"]}"'
         self.exec(f'bash ./setup-network.sh {args}')
 
-    # Install docker & kubeadm
-    def _setup_kubeadm(self):
-        self.log.info('installing kubeadm, this may take a while...')
-        self._upload_rp_file('setup-kubeadm.sh')
-        self.exec(f'bash ./setup-kubeadm.sh')
-
     # EVERYTHING (setup node from scratch)
-    def setup(self):
+    def create(self):
         self.ssh_copy_id()
-        self.update()
 
         if self._is_master():
             self.log.info('master node; skipping network & kubeadm setup.')

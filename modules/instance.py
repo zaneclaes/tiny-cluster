@@ -57,15 +57,30 @@ class Instance():
         # self._sh(f'mkdir -p {os.path.dirname(fp_local)}')
         return self._scp(f'{self.user_address}:{fp_remote}', fp_local)
 
+    # Install docker & kubeadm
+    def _setup_kubeadm(self):
+        self.log.info('installing kubeadm, this may take a while...')
+        self._upload_rp_file('setup-kubeadm.sh')
+        self.exec(f'bash ./setup-kubeadm.sh')
+
+    # Get the path at which to store a local file.
+    def _upload_rp_file(self, fp_remote):
+        fp_local = fp_remote
+        if fp_local.startswith('.'): fp_local = fp_local[1:]
+        fp_local = f'{self.cluster.cwd}/raspberry-pi/{fp_local}'
+        return self._upload(fp_local, fp_remote)
+
     # ensure all software is up-to-date
     def update(self):
         self.log.info(f'updating packages...')
+        self._apt(f'apt autoremove')
         self._apt('apt-get update')
         self._apt('apt-get upgrade')
-        self._apt('apt-get dist-upgrade')
 
-        self.log.info(f'cleaning up...')
-        self._apt(f'apt autoremove')
+    # Distribution upgrade
+    def upgrade(self):
+        self.log.info(f'upgrading...')
+        self._apt('apt-get dist-upgrade')
 
     # Reboot the instance
     def reboot(self):
@@ -116,7 +131,7 @@ class Instance():
         for interface in self._get_network_interfaces():
             addr = self._get_network_address(interface)
             if not ip_address or addr == ip_address:
-                self.log.debug(f'"{interface}" matches "{ip_address}"')
+                self.log.info(f'found network interface "{interface}" for "{ip_address}"')
                 return interface
         return None
 

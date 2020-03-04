@@ -45,7 +45,7 @@ This project is WIP, but everything described below should function. Please open
 _Note: any time you use `tiny-cluster.py` below, you can append `-l DEBUG` to change the log mode to be more verbose. You can also run ./tiny-cluster.py --help for assistance with any command._
 
 * Clone this repository: `git clone git@github.com:zaneclaes/tiny-cluster.git`
-* Install the required python packages: `pip3 install pyyaml`
+* Install the required python packages: `pip3 install pyyaml deepmerge argparse`
 * Run `cd tiny-cluster` and `./tiny-cluster.py setup` to scan the local network and follow the prompts.
 
 If a Raspberry Pi is connected to the network, it should be discovered and walk you through the setup. Note that the auto-detect feature requires the [`arp` tool](https://www.computerhope.com/unix/arp.htm). The auto-detect feature is generally less well-tested than the following manual setup steps, and should presently be considered "beta."
@@ -93,7 +93,7 @@ defaults:
 
 The following command will install `kubeadm` and then perform the necessary configuration steps:
 
-`./tiny-cluster.py master create`
+`./tiny-cluster.py --node master create`
 
 The configuration steps are equivalent to running the following commands:
 
@@ -141,6 +141,15 @@ Configurations are loaded in the following way:
 * `defaults.yaml` is loaded.
 * `contexts/the-context-name.yaml` is merged on top of those values.
 * From the resulting config, the `defaults` entries are merged with the specific values provided within `kubernetes` and `nodes`. For example, in the above sample configuration, there is no need to re-define the `url_base` for the kiosk in each node, because it is inherited from `defaults.kiosk`.
+
+### Other Linux Flavors
+
+Tiny Cluster supports using a Kubernetes master IP that is not a Raspberry Pi. It has specifically been tested on Ubuntu 18.04. It should generally work with Debian-flavors, but has not been tested beyond that. However, it may require some manual tuning. For example:
+
+* Your SSH user must be able to sudo without a password, [like this for Ubuntu](https://phpraxis.wordpress.com/2016/09/27/enable-sudo-without-password-in-ubuntudebian/)
+* You may wish to [make systemd the default](https://kubernetes.io/docs/setup/production-environment/container-runtimes/).
+
+Also, be aware that Tiny Cluster will symlink `~/.kube/config` to the config file for the kubeadm master it creates.
 
 ### Advanced DNS Options
 

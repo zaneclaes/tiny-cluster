@@ -20,6 +20,7 @@ class Master(Instance):
     # https://vitux.com/install-nfs-server-and-client-on-ubuntu/
     def install_nfs(self):
         if not self.cluster.nfs or len(self.cluster.nfs['directory']) <= 0: return
+        self.set_context()
         nfs_dir = self.cluster.nfs['directory']
         nfs_path = f'/mnt/{nfs_dir}'
         nfs_allow = nfs_path + ' ' + self.cluster.nfs['allow_ip']
@@ -39,6 +40,7 @@ class Master(Instance):
     # Create the Kubernetes cluster via Kubeadm, and run all install/config steps
     def create(self):
         self.ssh_copy_id()
+        self._setup_kubeadm()
         init_flags = f'--apiserver-advertise-address={self.address} --upload-certs'
         if self.cluster.network_add_on == 'flannel':
             init_flags += ' --pod-network-cidr=10.244.0.0/16'
@@ -51,24 +53,34 @@ class Master(Instance):
 
     # Create and download a context config file for this cluster.
     def create_context(self):
-        fp = f'.kube/{self.cluster.context}.conf'
+        name = self.cluster.context
+        fp = f'.kube/{name}.conf'
         self.log.info(f'creating cluster config file: {fp}...')
         cf =  f'/home/{self.username}/{fp}'
         self.exec(f'mkdir -p /home/{self.username}/.kube')
         self.exec(f'sudo cp /etc/kubernetes/admin.conf {cf} && sudo chmod +rw {cf}')
-        self.exec(f'sed -i s/kubernetes/{self.cluster.context}/g {cf}')
+        self.exec(f'sed -i s/kubernetes/{name}/g {cf}')
+        self.exec(f'ln -sf {cf} /home/{self.username}/.kube/config')
         self._download(cf, f'$HOME/{fp}')
+
+    def set_context(self):
+        name = self.cluster.context
+        self.log.debug(f'setting context to {name}...')
+        self.exec(f'kc config set current-context {name}-admin@{name}')
 
     # Remove the master-node taint.
     def untaint(self):
         n = self._node
-        if not n: return
+        if not n:
+            self.log.debug(f'leaving master node tainted because it is not a node')
+            return
         self.log.info(f'untaining master node "{n.name}"...')
         self.exec(f'kubectl taint nodes {n.name} node-role.kubernetes.io/master-')
 
     # Install the networking add-on, if requested
     def install_network_add_on(self):
         if not self.cluster.network_add_on: return
+        self.set_context()
         self.log.info(f'installing network add on: {self.cluster.network_add_on}')
         if self.cluster.network_add_on == 'flannel':
           self.exec('kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/2140ac876ef134e0ed5af15c65e414cf26827915/Documentation/kube-flannel.yml')
