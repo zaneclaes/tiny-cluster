@@ -24,9 +24,7 @@ class TinyCluster():
         return True
 
     def __init__(self):
-        try:                self.fp = os.readlink(__file__)
-        except OSError:     self.fp = __file__
-        self.cwd = os.path.dirname(self.fp)
+        self.cwd = os.getcwd() # os.path.dirname(__file__)
 
         # Load defaults.yaml then merge in config.yaml if it exists
         fp_def = f'{self.cwd}/defaults.yaml'
@@ -36,31 +34,26 @@ class TinyCluster():
         log_levels = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 
         args = sys.argv[1:]
-
         methods = set()
         methods.update([c for c in dir(Master) if not c.startswith('_')])
         methods.update([c for c in dir(Node) if not c.startswith('_')])
 
         parser = argparse.ArgumentParser(f'{script}')
         parser.add_argument('--context', '-c', default='home')
-        parser.add_argument('--node', '-n', default='master')
-        parser.add_argument('method', choices=methods)
+        parser.add_argument('target', default='master',
+            help='The node name, or "master" for master node, or "create" to create a cluster.')
+        parser.add_argument('method', nargs='?', choices=methods)
         parser.add_argument('--log-level', '-l', choices=log_levels, default='INFO', help='logging level')
         parser.add_argument('--log-format', '-f', default='[%(levelname)s] [%(name)s] %(message)s')
         self.opts = parser.parse_args(args)
 
-        # parser = argparse.ArgumentParser(f'{script} {self.opts.node} {self.opts.method}')
-        # if (self.opts.method == 'exec'):
-        #     parser.add_argument('cmd', help='a command to run via SSH on this node')
-
-        # self.args = parser.parse_args(sys.argv[3:])
         logging.basicConfig(format=self.opts.log_format, level=self.opts.log_level)
         self.log = logging.getLogger(self.opts.context)
 
         # "quiet" flags are enabled unless DEBUG log mode.
         self.quiet = self.opts.log_level != 'DEBUG'
-        # self.stdout = '' # '> /dev/null 2>&1' if self.quiet else ''
 
+        # Load initial context data from configs.
         self.set_context(self.opts.context)
 
         # Create master node:
@@ -74,23 +67,23 @@ class TinyCluster():
         for node_ip in self.config['nodes']:
             self.create_node(node_ip, self.config['nodes'][node_ip])
 
-        if self.opts.node == 'master':
+        if self.opts.target == 'master':
             self.instance = self.master
-        elif self.opts.node in self.node_name_to_ip:
-            self.instance = self.nodes[self.node_name_to_ip[self.opts.node]]
+        elif self.opts.target == 'create':
+            self.create()
+        elif self.opts.target in self.node_name_to_ip:
+            self.instance = self.nodes[self.node_name_to_ip[self.opts.target]]
         else:
-            self.instance = None
+            raise Exception(
+                f'Cannot find node: {self.opts.target}. Please see the README to edit {self.fp_cfg}')
 
         # Call the work function.
         self.log.debug(f'run {self.opts}')
         if self.opts.method == 'create':
-            if self.instance != None:
-                self.instance.create()
-            else:
-                self.create()
+            self.instance.create()
         else:
             if not hasattr(self.instance, self.opts.method):
-                raise Exception(f'{self.opts.method} is not valid on {self.opts.node}.')
+                raise Exception(f'{self.opts.method} is not valid on {self.opts.target}.')
             getattr(self.instance, self.opts.method)()
 
     # Create a new device.
@@ -108,17 +101,17 @@ You could run `arp -d -a` to flush the cache, or `arp -a` to ensure that the dev
 
         # Make it master?
         if not self.master or not self.master.connect:
-            is_mstr = input(f'''Should {self.opts.node} be the master? [Y/n]: ''')
+            is_mstr = input(f'''Should {self.opts.target} be the master? [Y/n]: ''')
             if is_mstr.lower() != 'n':
                 self.master = Master(self, self.update_master_cfg(ip_address))
                 self.master.update()
                 self.master.create()
 
         # Set up node?
-        c = input(f'Confirm: create node "{self.opts.node}" at {ip_address}? [Y/n] ')
+        c = input(f'Confirm: create node "{self.opts.target}" at {ip_address}? [Y/n] ')
         if c.lower() == 'n': return
 
-        update_cfg = {'name': self.opts.node}
+        update_cfg = {'name': self.opts.target}
         if ip_address in self.nodes:
             node = self.nodes[ip_address]
             self.log.info(f'using existing node "{node.name}" for {ip_address}')

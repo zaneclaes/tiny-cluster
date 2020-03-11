@@ -15,7 +15,6 @@ class Instance():
         self.connect = None
         self.address = None
         self.user_address = 'localhost'
-        self.sudo = 'sudo' in instance_cfg and instance_cfg['sudo']
         if 'connect' in self.cfg and self.cfg['connect']:
             self.connect = self.cfg['connect']
             if self.connect == 'ssh':
@@ -31,8 +30,8 @@ class Instance():
     # Execute a command on this instance.
     def exec(self, cmd, check=True, capture_output=False):
         capture_output = capture_output or self.cluster.quiet
-        self.log.debug(f'exec({cmd}), check={check}, capture_output={capture_output}')
         args = self._get_proc_args(cmd)
+        self.log.debug(f'exec({args}), check={check}, capture_output={capture_output}')
         r = subprocess.run(args, shell=True, check=False, capture_output=capture_output, text=True)
         if check:
             if capture_output and r.returncode != 0:
@@ -43,7 +42,6 @@ class Instance():
 
     # Get "args" to pass into the subprocess to run a command on this instance
     def _get_proc_args(self, cmd):
-        if self.sudo: cmd = 'sudo ' + cmd
         if self.connect == 'ssh':
             cmd = cmd.replace('"', '\\"')
             return f'ssh -o "StrictHostKeyChecking=no" "{self.user_address}" "{cmd}"'

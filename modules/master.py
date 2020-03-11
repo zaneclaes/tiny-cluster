@@ -12,7 +12,7 @@ class Master(Instance):
 
     # Command for a node to join this cluster.
     def _get_join_command(self):
-        return self.exec('kubeadm token create --print-join-command', capture_output=True).stdout
+        return self.exec('sudo kubeadm token create --print-join-command', capture_output=True).stdout
 
     def print_join_command(self):
         print(self._get_join_command())

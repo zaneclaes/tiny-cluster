@@ -5,31 +5,39 @@ CLI + yaml for the configuration of an at-home Kubernetes fleet with one or more
 
 ## Practical Usage
 
-_Some configuration requried (see [Getting Started](#getting-started))._
+_Some configuration requried (see [Getting Started](#getting-started)). Assume you've aliased `ln -sf ./tiny-cluster.py /usr/local/bin/tc` and your `contexts` directiry lives within the `pwd`._
 
-Create Kubernetes cluster, installing kubeadm with a network add-on and NFS support enabled per `yaml` config:
+Create Kubernetes cluster, installing kubeadm with weave/flannel and NFS support enabled per `yaml` config:
 
-`./tiny-cluster.py -n master create`
+`tc master create`
 
 Create another node, "rpi", installing docker/kubeadm and using fixed IP defined in the `yaml`:
 
-`./tiny-cluster.py -n rpi create`
+`tc rpi create`
 
 Join the cluster:
 
-`./tiny-cluster.py -n rpi join`
+`tc rpi join`
 
 Add some labels to the node per the `yaml` config:
 
-`./tiny-cluster.py -n rpi label`
+`tc rpi label`
 
 Set up the node as a "Kiosk", showing a permanent Chromium browser pointed at a web URL:
 
-`./tiny-cluster.py -n rpi configure`
+`tc rpi configure`
 
 SSH into one of the nodes:
 
-`./tiny-cluster.py -n rpi ssh`
+`tc rpi ssh`
+
+Reboot a node:
+
+`tc rpi reboot`
+
+Create a second cluster:
+
+`tc -c second-cluster master create`
 
 ## Features
 
@@ -51,6 +59,8 @@ SSH into one of the nodes:
 * Provide a simple interface for other advanced management features.
 
 ## With Many Thanks...
+
+This repo is a tool I cobbled together over the course of a good year or so. I am placing it here in the hopes that it will be useful to others. But much of the work comes from sources like these:
 
 - [Alex Ellis](https://www.alexellis.io/) for [his work getting K8s on Raspbian](https://gist.github.com/alexellis/fdbc90de7691a1b9edb545c17da2d975).
 - [How to Set Up a Raspberry Pi Cluster](https://blog.hypriot.com/post/setup-kubernetes-raspberry-pi-cluster/)
@@ -92,8 +102,8 @@ The following is an sample `contexts/home.yaml` file which is used in the exampl
 
 * It assumes you know the IP addresses of the Raspberry Pis you wish to configure (192.168.0.1, etc.). Tiny Cluster will ensure these IP addreses are static at a later point.
 * It defines a Kubernetes master, as well as two nodes (if you look closely, you'll note the master actually shares an IP address with one of the nodes, which implies that the master also acts as a node).
-* Both of the two nodes will have Kiosk mode enabled, which means that they will open Chromium on boot to the URL `http://192.168.0.1:8123/lovelace/home?kiosk` and `http://192.168.0.1:8123/lovelace/spellbook?kiosk`, respectively.
-* The `spellbook` node will have a Kubernetes label of `tiny-cluster/node-pi-beacon=true`. This is helpful in the later steps for deploying a Docker container to this node.
+* Both of the two nodes will have Kiosk mode enabled, which means that they will open Chromium on boot to the URL `http://192.168.0.1:8123/lovelace/home?kiosk` and `http://192.168.0.1:8123/lovelace/rpi?kiosk`, respectively.
+* The `rpi` node will have a Kubernetes label of `tiny-cluster/node-pi-beacon=true`. This is helpful in the later steps for deploying a Docker container to this node.
 
 ```
 kubernetes:
@@ -109,11 +119,11 @@ nodes:
       url_slug: home
 
   192.168.0.2:
-    name: spellbook
+    name: rpi
     labels:
     - tiny-cluster/node-pi-red=true
     kiosk:
-      url_slug: spellbook
+      url_slug: rpi
 
 defaults:
   kiosk:
@@ -131,28 +141,28 @@ The following command will install `kubeadm` and then perform the necessary conf
 
 The configuration steps are equivalent to running the following commands:
 
-* `./tiny-cluster.py -n master create_context`: generate a `.kube/home.conf` configuration file which is downloaded to the controlling computer so that it may subsequently access the cluster.
-* `./tiny-cluster.py -n master install_network_add_on`: Install `flannel`
-* `./tiny-cluster.py -n master configure_nfs`: Create a network file system at `/mnt/tiny-cluster` which may be accessed by the local network
-* `./tiny-cluster.py -n master untaint`: If this master is also a `node`, then remove the `master` taint.
+* `./tiny-cluster.py master create_context`: generate a `.kube/home.conf` configuration file which is downloaded to the controlling computer so that it may subsequently access the cluster.
+* `./tiny-cluster.py master install_network_add_on`: Install `flannel` or `weave`
+* `./tiny-cluster.py master configure_nfs`: Create a network file system at `/mnt/tiny-cluster` which may be accessed by the local network
+* `./tiny-cluster.py master untaint`: If this master is also a `node` (the same IP is used within the `nodes` condfig), then remove the `master` taint.
 
 ### Node Setup
 
-The folloting command will set up the `spellbook` node, as defined in the above configuration:
+The folloting command will set up the `rpi` node, as defined in the above configuration:
 
-`/tiny-cluster.py -n spellbook create`
+`/tiny-cluster.py rpi create`
 
 It begins by updating the device, assigning the static IP address, and installing the required scripts. Then it performs commands equivalent to running the following:
 
-* `./tiny-cluster.py -n spellbook configure`: write the configuration files (e.g., the kiosk startup URL) to the device and join the Kubernetes cluster.
-* `./tiny-cluster.py -n spellbook update`: make sure all packages are up-to-date.
-* `./tiny-cluster.py -n spellbook reboot`: restart the device.
+* `./tiny-cluster.py rpi configure`: write the configuration files (e.g., the kiosk startup URL) to the device and join the Kubernetes cluster.
+* `./tiny-cluster.py rpi update`: make sure all packages are up-to-date.
+* `./tiny-cluster.py rpi reboot`: restart the device.
 
 The following additional commands may be useful:
 
-* `./tiny-cluster.py -n spellbook ssh`: SSH into the device
-* `./tiny-cluster.py -n spellbook join`: (Re)join the Kubernetes cluster
-* `./tiny-cluster.py -n spellbook label`: (Re)label the node in the cluster
+* `./tiny-cluster.py rpi ssh`: SSH into the device
+* `./tiny-cluster.py rpi join`: (Re)join the Kubernetes cluster
+* `./tiny-cluster.py rpi label`: (Re)label the node in the cluster
 
 ## Deploying Docker Containers
 
@@ -168,7 +178,7 @@ The following sample deployments are included:
 
 ## Advanced Configurations
 
-You may have more than one configuration, known as a Context. The default context is `home`, thus the fact that your configuration usually resides at `contexts/home.yaml`. If you were to create a second file named `contexts/work.yaml`, then you could run `./tiny-cluster work master create` (or any other command), where the context name is the first argument.
+You may have more than one configuration, known as a Context. The default context is `home`, thus the fact that your configuration usually resides at `contexts/home.yaml`. If you were to create a second file named `contexts/work.yaml`, then you could run `./tiny-cluster.py -c work master create` (or any other command), where the context name is the first argument.
 
 Configurations are loaded in the following way:
 

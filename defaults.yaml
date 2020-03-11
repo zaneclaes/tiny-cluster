@@ -15,10 +15,10 @@ kubernetes:
     # username: 'root'
     # address: '192.168.1.100'
     # sudo: False
-    nfs: # Install Network File System
-      directory: '/mnt/tiny-cluster'
-      allow_ips:
-        '*': ['rw', 'sync', 'no_subtree_check']
+    # nfs: # Install Network File System
+    #   directory: '/mnt/tiny-cluster'
+    #   allow_ips:
+    #     '*': ['rw', 'sync', 'no_subtree_check']
 
 defaults:
   # Default configuration for all nodes.
@@ -26,12 +26,14 @@ defaults:
     name: null # alias, will be set as the hostname
     connect: 'ssh'
     username: 'pi' # The user on the Raspberry Pi
-    kiosk: null # enable kiosk
+    kiosk: null # If set to a dictionary, Kiosk is enabled, and will inherit defaults from below.
     labels: [] # kubernetes labels
     usb_ethernet: True # enable/disable USB & Ethernet
     hdmi: True # enable/disable TVService
-    dns: 8.8.8.8
-    interface: eth0
+    dns: 8.8.8.8 # Explicitly set the DNS in /etc/dhcpcd.cnf
+    interface: eth0 # Look for this device on eth0 and assign the static IP there.
+    master: False # Not the master node. There may only be one master.
+    nfs: null # No NFS server on this node. See example above.
 
   # Default settings for ALL kiosks.
   # Any single node can overwrite any one of these values by providing a kiosk dictionary
