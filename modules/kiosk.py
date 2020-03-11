@@ -25,7 +25,7 @@ class Kiosk():
         else:
             self.log.info(f'removing xscreensaver...')
             self.node._apt(f'apt-get remove', 'xscreensaver unclutter')
-            self.node.exec('rm .xscreensaver')
+            self.node.exec('rm .xscreensaver || true')
             self.node.exec(f'rm kiosk.sh || true')
 
     def configure(self):

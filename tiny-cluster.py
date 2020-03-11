@@ -65,10 +65,8 @@ class TinyCluster():
 
         # Create master node:
         if self.config['kubernetes'] and self.config['kubernetes']['master']:
-            self.nfs = self.config['kubernetes']['nfs']
-            self.network_add_on = self.config['kubernetes']['network-add-on']
-            if self.network_add_on and self.network_add_on != 'flannel':
-                raise Exception('The only networking plugin currently supported is Flannel.')
+            self.network = self.config['kubernetes']['network']
+            if not self.network: self.network = {}
             self.master = Master(self, self.config['kubernetes']['master'])
 
         # Create the node instances and run the method.

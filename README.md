@@ -1,13 +1,35 @@
-# Home Cluster
-One-touch installation and configuration tool for managing the configuration of one or more Raspberry Pis.
+# Tiny Cluster
+CLI + yaml for the configuration of an at-home Kubernetes fleet with one or more Raspberry Pis.
 
-This project is WIP, but everything described below should function. Please open a Github issue for any problems.
+[Read the Blog Post](https://www.technicallywizardry.com/raspberry-pi-config-management-kubernetes/) for examples, screenshots, etc. Please open a Github issue for any problems.
 
-## At-a-Glance
+## Practical Usage
 
-* **Kiosk** mode will make the node into a dedicated Chromium browser for a web interface.
-* **Docker** images are used to deploy features.
-* **Kubernetes** connects all the devices together into a single mesh.
+_Some configuration requried (see [Getting Started](#getting-started))._
+
+Create Kubernetes cluster, installing kubeadm with a network add-on and NFS support enabled per `yaml` config:
+
+`./tiny-cluster.py -n master create`
+
+Create another node, "rpi", installing docker/kubeadm and using fixed IP defined in the `yaml`:
+
+`./tiny-cluster.py -n rpi create`
+
+Join the cluster:
+
+`./tiny-cluster.py -n rpi join`
+
+Add some labels to the node per the `yaml` config:
+
+`./tiny-cluster.py -n rpi label`
+
+Set up the node as a "Kiosk", showing a permanent Chromium browser pointed at a web URL:
+
+`./tiny-cluster.py -n rpi configure`
+
+SSH into one of the nodes:
+
+`./tiny-cluster.py -n rpi ssh`
 
 ## Features
 
@@ -27,6 +49,18 @@ This project is WIP, but everything described below should function. Please open
 * Install kubeadm, network add-ons, and NFS
 * Apply labels to nodes
 * Provide a simple interface for other advanced management features.
+
+## With Many Thanks...
+
+- [Alex Ellis](https://www.alexellis.io/) for [his work getting K8s on Raspbian](https://gist.github.com/alexellis/fdbc90de7691a1b9edb545c17da2d975).
+- [How to Set Up a Raspberry Pi Cluster](https://blog.hypriot.com/post/setup-kubernetes-raspberry-pi-cluster/)
+- [Kubeadm on Raspberry Pi](https://kubecloud.io/setting-up-a-kubernetes-1-11-raspberry-pi-cluster-using-kubeadm-952bbda329c8)
+- [Baremetal K8s with Kubeadm](https://medium.com/@kvaps/creating-high-available-baremetal-kubernetes-cluster-with-kubeadm-and-keepalived-simplest-guide-71766d5e25ae)
+- [K8s on Pi](https://medium.com/nycdev/k8s-on-pi-9cc14843d43)
+- [Kiosk mode for Home Assistant](https://gist.github.com/ciotlosm/1f09b330aa5bd5ea87b59f33609cc931)
+- [Argbash](https://argbash.io/generate)
+- [What are the Raspberry Pi OUIs](https://raspberrypi.stackexchange.com/questions/28365/what-are-the-possible-ouis-for-the-ethernet-mac-address)?
+- [Disabling Swap in Linux](https://serverfault.com/questions/684771/best-way-to-disable-swap-in-linux)
 
 # Getting Started
 
@@ -97,28 +131,28 @@ The following command will install `kubeadm` and then perform the necessary conf
 
 The configuration steps are equivalent to running the following commands:
 
-* `./tiny-cluster.py master create_context`: generate a `.kube/home.conf` configuration file which is downloaded to the controlling computer so that it may subsequently access the cluster.
-* `./tiny-cluster.py master install_network_add_on`: Install `flannel`
-* `./tiny-cluster.py master install_nfs`: Create a network file system at `/mnt/tiny-cluster` which may be accessed by the local network
-* `./tiny-cluster.py master untaint`: If this master is also a `node`, then remove the `master` taint.
+* `./tiny-cluster.py -n master create_context`: generate a `.kube/home.conf` configuration file which is downloaded to the controlling computer so that it may subsequently access the cluster.
+* `./tiny-cluster.py -n master install_network_add_on`: Install `flannel`
+* `./tiny-cluster.py -n master configure_nfs`: Create a network file system at `/mnt/tiny-cluster` which may be accessed by the local network
+* `./tiny-cluster.py -n master untaint`: If this master is also a `node`, then remove the `master` taint.
 
 ### Node Setup
 
 The folloting command will set up the `spellbook` node, as defined in the above configuration:
 
-`/tiny-cluster.py node spellbook setup`
+`/tiny-cluster.py -n spellbook create`
 
 It begins by updating the device, assigning the static IP address, and installing the required scripts. Then it performs commands equivalent to running the following:
 
-* `./tiny-cluster.py node spellbook configure`: write the configuration files (e.g., the kiosk startup URL) to the device and join the Kubernetes cluster.
-* `./tiny-cluster.py node spellbook update`: make sure all packages are up-to-date.
-* `./tiny-cluster.py node spellbook reboot`: restart the device.
+* `./tiny-cluster.py -n spellbook configure`: write the configuration files (e.g., the kiosk startup URL) to the device and join the Kubernetes cluster.
+* `./tiny-cluster.py -n spellbook update`: make sure all packages are up-to-date.
+* `./tiny-cluster.py -n spellbook reboot`: restart the device.
 
 The following additional commands may be useful:
 
-* `./tiny-cluster.py node spellbook ssh`: SSH into the device
-* `./tiny-cluster.py node spellbook join`: (Re)join the Kubernetes cluster
-* `./tiny-cluster.py node spellbook label`: (Re)label the node in the cluster
+* `./tiny-cluster.py -n spellbook ssh`: SSH into the device
+* `./tiny-cluster.py -n spellbook join`: (Re)join the Kubernetes cluster
+* `./tiny-cluster.py -n spellbook label`: (Re)label the node in the cluster
 
 ## Deploying Docker Containers
 
@@ -166,7 +200,12 @@ defaults:
 
 See the comments in `defaults.yaml`
 
-# Supported Devices
+# Supported With...
+
+## Tested OSs
+
+- Raspbian Jessie
+- Raspbian Buster
 
 ## Tested On
 

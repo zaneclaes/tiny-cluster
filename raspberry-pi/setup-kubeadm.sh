@@ -9,7 +9,9 @@ else
 fi
 
 # Disable Swap
-sudo dphys-swapfile swapoff && sudo dphys-swapfile uninstall && sudo update-rc.d dphys-swapfile remove
+sudo dphys-swapfile swapoff && \
+  sudo dphys-swapfile uninstall && \
+  sudo systemctl disable dphys-swapfile
 
 flags="cgroup_enable=cpuset cgroup_enable=memory"
 if grep -q "$flags" /boot/cmdline.txt; then
@@ -27,7 +29,13 @@ if [[ ! $(which kubeadm) ]]; then
   curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add - && \
     echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
     sudo apt-get update -q && \
-    sudo apt-get install -qy dialog kubeadm
+    sudo apt-get install -qy kubeadm
 else
   echo "kubeadm already installed."
+fi
+
+if [[ ! $(which exportfs) ]]; then
+  sudo apt install nfs-kernel-server
+else
+  echo "nfs-kernel-server already installed."
 fi

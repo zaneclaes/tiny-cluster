@@ -14,7 +14,7 @@ sudo sed -i s/raspberrypi/$hostname/g /etc/hosts
 
 # Set the static ip
 sip="static ip_address=$ip"
-if grep -q "$sip" /etc/dhcpcd.conf; then
+if grep -q "$sip" \; then
   echo "the IP address $ip is already configured."
 else
   sudo cat <<EOT >> /etc/dhcpcd.conf

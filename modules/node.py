@@ -73,6 +73,8 @@ class Node(Instance):
         self.exec(f'echo "@bash /home/pi/startup.sh {startup_flags}" > {self._fp_autostart}')
 
         self.kiosk.configure()
+
+        self.configure_nfs()
         if not self._is_master(): self.join()
         self.label()
 

@@ -4,11 +4,9 @@ nodes: {}
   #   name: cluster-rpi0
 
 kubernetes:
-  network-add-on: flannel
-
-  nfs: # Install Network File System
-    directory: 'tiny-cluster'
-    allow_ip: '*'
+  network:
+    add-on: flannel
+    ip-range: 10.244.0.0/16
 
   master:
     connect: null
@@ -16,6 +14,11 @@ kubernetes:
     # connect: 'ssh'
     # username: 'root'
     # address: '192.168.1.100'
+    # sudo: False
+    nfs: # Install Network File System
+      directory: '/mnt/tiny-cluster'
+      allow_ips:
+        '*': ['rw', 'sync', 'no_subtree_check']
 
 defaults:
   # Default configuration for all nodes.
