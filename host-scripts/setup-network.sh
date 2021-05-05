@@ -12,6 +12,10 @@ sudo hostnamectl --static set-hostname $hostname
 sudo hostnamectl --pretty set-hostname $hostname
 sudo sed -i s/raspberrypi/$hostname/g /etc/hosts
 
+if [[ -z "$dns" ]]; then
+  exit 0
+fi
+
 # Set the static ip
 sip="static ip_address=$ip"
 if grep -q "$sip" /etc/dhcpcd.conf; then

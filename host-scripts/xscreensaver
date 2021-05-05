@@ -2,7 +2,7 @@
 # Written by xscreensaver-demo 5.36 for pi on Wed Aug 14 16:05:13 2019.
 # https://www.jwz.org/xscreensaver/
 
-timeout:  TIMEOUT
+timeout:  00:30:00
 cycle:    0:10:00
 lock:   False
 lockTimeout:  0:00:00
@@ -34,7 +34,7 @@ grabVideoFrames:    False
 chooseRandomImages: False
 imageDirectory:
 
-mode:   MODE
+mode:   blank
 selected: -1
 
 textMode: url

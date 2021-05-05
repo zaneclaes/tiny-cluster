@@ -33,9 +33,3 @@ if [[ ! $(which kubeadm) ]]; then
 else
   echo "kubeadm already installed."
 fi
-
-if [[ ! $(which exportfs) ]]; then
-  sudo apt install nfs-kernel-server
-else
-  echo "nfs-kernel-server already installed."
-fi

@@ -1,48 +1,45 @@
-nodes: {}
-  # [EXAMPLE]
-  # 192.168.1.202:
-  #   name: cluster-rpi0
+applications: "." # by default, applications are loaded from the same directory as the environment.
+# This can be set to a specific path, or false/null to turn off all applications for the env.
 
+# Default Kubernetes configuration.
 kubernetes:
+  context: null
+  cluster: null
+  protected: False
   network:
     add-on: flannel
-    ip-range: 10.244.0.0/16
+    ip-range: 10.96.0.0/16
 
-  master:
-    connect: null
-    # [EXAMPLE] connect to a remote master:
-    # connect: 'ssh'
-    # username: 'root'
-    # address: '192.168.1.100'
-    # sudo: False
-    # nfs: # Install Network File System
-    #   directory: '/mnt/tiny-cluster'
-    #   allow_ips:
-    #     '*': ['rw', 'sync', 'no_subtree_check']
+# Default configuration for all nodes.
+node:
+  username: 'pi' # The user, used to SSH into this node.
+  ssh_key: '~/.ssh/id_rsa' # This local key will be automatically copied to the host machine.
 
-defaults:
-  # Default configuration for all nodes.
-  node:
-    name: null # alias, will be set as the hostname
-    connect: 'ssh'
-    username: 'pi' # The user on the Raspberry Pi
-    kiosk: null # If set to a dictionary, Kiosk is enabled, and will inherit defaults from below.
-    labels: [] # kubernetes labels
-    usb_ethernet: True # enable/disable USB & Ethernet
-    hdmi: True # enable/disable TVService
-    dns: 8.8.8.8 # Explicitly set the DNS in /etc/dhcpcd.cnf
-    interface: eth0 # Look for this device on eth0 and assign the static IP there.
+  kubernetes:
+    labels: [] # simple labels for the node.
     master: False # Not the master node. There may only be one master.
-    nfs: null # No NFS server on this node. See example above.
 
-  # Default settings for ALL kiosks.
-  # Any single node can overwrite any one of these values by providing a kiosk dictionary
-  kiosk:
-    url_base: null # [REQUIRED] the base URL
-    url_slug: '' # if null, will default to the name of the node.
-    url_query_params: [] # strings to be joined with '&' and appended to query params
-    chromium_flags: '--noerrdialogs --disable-infobars --ignore-certificate-errors'
-    unclutter: 0.5
-    xscreensaver:
-      mode: 'blank'
-      timeout: '00:01:00'
+  host:
+    kiosk: null # Example:
+      # url_base: null # Required
+      # url_slug: '' # if null, will default to the name of the node.
+      # url_query_params: [] # strings to be joined with '&' and appended to query params
+      # chromium_flags: '--noerrdialogs --disable-infobars --ignore-certificate-errors'
+
+      # unclutter: 0.5
+      # xscreensaver:
+      #   mode: 'blank'
+      #   timeout: '00:01:00'
+
+    nfs: null # No NFS server on this node. Example:
+      # directory: '/mnt/tiny-cluster'
+      # allow_ips:
+      #   '*': ['rw', 'sync', 'no_subtree_check']
+
+    rpi: null # Raspberry Pi tuned settings. Example:
+      # usb_ethernet: True # ( enable/disable USB & Ethernet
+      # hdmi: True # (Raspberry Pi) enable/disable TVService
+
+    network: null # No static IP on this node. Example:
+      # interface: eth0 # Look for this device on eth0 and assign the static IP there.
+      # dns: 8.8.8.8 # Explicitly set the DNS in /etc/dhcpcd.cnf
